@@ -1,173 +1,148 @@
-#  RAG System — Production-Style Retrieval-Augmented Generation
+# RAG System (Built from Scratch-ish)
 
-A modular, production-grade RAG (Retrieval-Augmented Generation) system built with LangChain, ChromaDB, Ollama embeddings, and Google Gemini. Features advanced retrieval techniques including multi-query generation, hybrid search, and Reciprocal Rank Fusion (RRF).
+This is a Retrieval-Augmented Generation (RAG) system I built to actually understand how modern AI systems retrieve and reason over documents instead of just blindly calling APIs.
 
----
-
-##  Features
-
-| Feature | Description |
-|---|---|
-| **Multi-Query Retrieval** | Generates 3+ alternative queries via LLM to improve recall |
-| **Hybrid Search** | Combines BM25 keyword search + vector semantic search |
-| **Reciprocal Rank Fusion** | Merges ranked lists across all queries for optimal ranking |
-| **Conversational RAG** | History-aware query rewriting for follow-up questions |
-| **Grounded Answers** | Strict prompting to prevent hallucination with source attribution |
-| **Streamlit Web UI** | ChatGPT-style chat interface with source display |
-| **Modular Architecture** | Clean separation of concerns — easy to extend and maintain |
+The goal wasn’t just to “make a chatbot”, but to experiment with better retrieval techniques like multi-query generation, hybrid search, and ranking strategies.
 
 ---
 
-##  Architecture
+## What this project does
 
-```
-User Query
-  → Query Rewriting (if chat history exists)
-  → Multi-Query Generation (original + 3 alternatives)
-  → Hybrid Retrieval per query (BM25 + Vector via EnsembleRetriever)
-  → Reciprocal Rank Fusion across all ranked lists
-  → Top-k Document Selection
-  → LLM Generation (Google Gemini)
-  → Answer + Sources
-```
+Given a set of documents, the system:
 
-### Project Structure
+* Finds relevant chunks using both **semantic + keyword search**
+* Improves recall using **multiple rewritten queries**
+* Combines results using **Reciprocal Rank Fusion (RRF)**
+* Generates answers using an LLM (Gemini) with **source grounding**
+
+It also supports follow-up questions in a conversational setting.
+
+---
+
+## Why I built this
+
+Most beginner RAG projects are just:
+
+> query → vector search → answer
+
+I wanted to go a bit deeper and explore:
+
+* how to improve retrieval quality
+* how ranking affects final answers
+* how real-world systems avoid missing context
+
+---
+
+## Features (stuff I actually focused on)
+
+* Multi-query generation (LLM rewrites the question into multiple variations)
+* Hybrid retrieval (BM25 + embeddings)
+* Reciprocal Rank Fusion for better ranking
+* Basic conversational memory (rewrites follow-up queries)
+* Streamlit UI for testing
+
+---
+
+## Project Structure (kept it modular on purpose)
 
 ```
 rag-project/
-│
-├── ingest.py               # Document ingestion pipeline
-├── query.py                # Single-query entry point
-├── chat.py                 # Conversational chat entry point
-├── app.py                  # Streamlit web app
-│
-├── core/
-│   └── pipeline.py         # Centralized RAG pipeline (run_rag)
-│
-├── features/
-│   ├── multi_query.py      # Multi-query generation
-│   ├── hybrid_search.py    # BM25 + vector hybrid retrieval
-│   └── rrf.py              # Reciprocal Rank Fusion
-│
-├── utils/
-│   ├── prompt.py           # Reusable prompt templates
-│   └── data_loader.py      # Shared document loading
-│
-├── docs/                   # Your source documents (.txt files)
-├── db/                     # ChromaDB storage (auto-generated)
-├── requirements.txt
-└── README.md
+
+ingest.py        # loads + embeds documents
+query.py         # single query
+chat.py          # conversational mode
+app.py           # streamlit UI
+
+core/
+  pipeline.py    # main RAG pipeline
+
+features/
+  multi_query.py
+  hybrid_search.py
+  rrf.py
+
+utils/
+  prompt.py
+  data_loader.py
+
+docs/            # input files
+db/              # vector store
 ```
 
 ---
 
-## 🚀 Setup
+## How to run
 
-### Prerequisites
+1. Install dependencies
 
-- **Python 3.10+**
-- **Ollama** installed and running locally ([install guide](https://ollama.com))
-- **Google Gemini API key** ([get one here](https://aistudio.google.com/apikey))
-
-### 1. Clone and install dependencies
-
-```bash
-git clone <your-repo-url>
-cd rag-project
-
-python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # macOS/Linux
-
+```
 pip install -r requirements.txt
 ```
 
-### 2. Pull the embedding model
+2. Run Ollama (for embeddings)
 
-```bash
+```
 ollama pull nomic-embed-text
 ```
 
-### 3. Set up environment variables
+3. Add your Gemini API key in `.env`
 
-Create a `.env` file in the project root:
+4. Add documents in `docs/`
+
+5. Run ingestion
 
 ```
-GOOGLE_API_KEY=your_gemini_api_key_here
-```
-
-### 4. Add your documents
-
-Place `.txt` files in the `docs/` directory. The system will index all text files it finds.
-
-### 5. Run ingestion
-
-```bash
 python ingest.py
 ```
 
-This loads your documents, splits them into chunks, and stores embeddings in ChromaDB.
+6. Start the app
 
----
-
-##  Usage
-
-### Option 1: Single Query (Terminal)
-
-```bash
-python query.py
 ```
-
-Enter a question and get an answer with sources.
-
-### Option 2: Chat Mode (Terminal)
-
-```bash
-python chat.py
-```
-
-Interactive multi-turn conversation with history-aware follow-ups.
-
-### Option 3: Web App (Streamlit)
-
-```bash
 streamlit run app.py
 ```
 
-Opens a ChatGPT-style web interface at `http://localhost:8501`.
-
 ---
 
-##  Example
+## Example
 
 ```
-You: How much did Microsoft pay to acquire GitHub?
+Q: How much did Microsoft pay for GitHub?
 
-[Pipeline] Processing query: How much did Microsoft pay to acquire GitHub?
-[Multi-Query] Generated 4 queries (1 original + 3 alternatives)
-[Multi-Query] Query 1: retrieved 5 documents
-[Multi-Query] Query 2: retrieved 5 documents
-[Multi-Query] Query 3: retrieved 5 documents
-[Multi-Query] Query 4: retrieved 5 documents
-[RRF] Merged 4 ranked lists → 12 unique docs → top 5 selected
-[Pipeline] Answer generated. Sources: ['docs\Microsoft.txt']
+→ System generates multiple query variations
+→ Retrieves documents using BM25 + vector search
+→ Merges rankings using RRF
+→ Passes top chunks to LLM
 
-Answer: Microsoft paid $7.5 billion to acquire GitHub.
-Sources:
-  - docs\Microsoft.txt
+Answer: $7.5 billion
+Source: Microsoft.txt
 ```
 
 ---
 
-##  Tech Stack
+## Things I learned
 
-- **LangChain** — orchestration framework
-- **ChromaDB** — vector database
-- **Ollama** — local embeddings (nomic-embed-text)
-- **Google Gemini** — LLM for generation
-- **Streamlit** — web interface
-- **rank-bm25** — keyword search
+* Retrieval quality matters more than the LLM
+* Simple vector search misses obvious results sometimes
+* Combining rankings (RRF) actually helps a lot
+* Prompting for grounded answers reduces hallucination
 
 ---
 
+## What I’d improve next
 
+* Add evaluation (measure accuracy vs baseline RAG)
+* Try reranking models instead of RRF
+* Support PDFs / larger datasets
+
+---
+
+## Tech stack
+
+LangChain, ChromaDB, Ollama, Gemini, Streamlit, BM25
+
+---
+
+## Final note
+
+This project was mainly to understand how RAG systems work beyond tutorials.
+If you have suggestions or ideas to improve it, I’d love to try them out.
