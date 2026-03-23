@@ -1,24 +1,35 @@
+"""
+Hybrid Search — combines BM25 (keyword) + Vector (semantic) retrieval.
+Uses LangChain's EnsembleRetriever to merge results with configurable weights.
+"""
+
 from langchain_community.retrievers import BM25Retriever
-from langchain_classic.retrievers.ensemble import EnsembleRetriever   
-
-def create_hybrid_retriever(vectorstore, documents, k=3):
+from langchain_classic.retrievers import EnsembleRetriever
+def create_hybrid_retriever(vectorstore, documents, k=5, bm25_weight=0.3, vector_weight=0.7):
     """
-    Creates a hybrid retriever combining:
-    - Vector search (semantic)
-    - BM25 (keyword)
-    """
+    Create a hybrid retriever combining vector search and BM25 keyword search.
 
-    # Vector retriever (you already use this)
+    Args:
+        vectorstore: ChromaDB vector store instance
+        documents: List of Document objects (for BM25 indexing)
+        k: Number of results to retrieve from each method
+        bm25_weight: Weight for BM25 results (default: 0.3)
+        vector_weight: Weight for vector results (default: 0.7)
+
+    Returns:
+        EnsembleRetriever combining both methods
+    """
+    # Semantic vector retriever
     vector_retriever = vectorstore.as_retriever(search_kwargs={"k": k})
 
-    # BM25 retriever (keyword search)
+    # BM25 keyword retriever
     bm25_retriever = BM25Retriever.from_documents(documents)
     bm25_retriever.k = k
 
-    # Combine both
+    # Combine with weighted ensemble
     hybrid_retriever = EnsembleRetriever(
         retrievers=[vector_retriever, bm25_retriever],
-        weights=[0.7, 0.3]
+        weights=[vector_weight, bm25_weight],
     )
 
     return hybrid_retriever
