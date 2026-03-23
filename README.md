@@ -1,10 +1,10 @@
-# 🔍 RAG System — Production-Style Retrieval-Augmented Generation
+#  RAG System — Production-Style Retrieval-Augmented Generation
 
 A modular, production-grade RAG (Retrieval-Augmented Generation) system built with LangChain, ChromaDB, Ollama embeddings, and Google Gemini. Features advanced retrieval techniques including multi-query generation, hybrid search, and Reciprocal Rank Fusion (RRF).
 
 ---
 
-## ✨ Features
+##  Features
 
 | Feature | Description |
 |---|---|
@@ -18,7 +18,7 @@ A modular, production-grade RAG (Retrieval-Augmented Generation) system built wi
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 User Query
@@ -110,7 +110,7 @@ This loads your documents, splits them into chunks, and stores embeddings in Chr
 
 ---
 
-## 💻 Usage
+##  Usage
 
 ### Option 1: Single Query (Terminal)
 
@@ -138,7 +138,7 @@ Opens a ChatGPT-style web interface at `http://localhost:8501`.
 
 ---
 
-## 📖 Example
+##  Example
 
 ```
 You: How much did Microsoft pay to acquire GitHub?
@@ -159,7 +159,7 @@ Sources:
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 - **LangChain** — orchestration framework
 - **ChromaDB** — vector database
@@ -170,6 +170,4 @@ Sources:
 
 ---
 
-## 📝 License
 
-MIT
