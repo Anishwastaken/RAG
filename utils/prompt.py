@@ -19,15 +19,12 @@ def get_qa_prompt(query, context_docs):
     """
     # Build context with source labels
     context_parts = []
-    sources_seen = set()
 
     for i, doc in enumerate(context_docs, 1):
         source = doc.metadata.get("source", "Unknown")
-        sources_seen.add(source)
         context_parts.append(f"[Document {i} — {source}]\n{doc.page_content}")
 
     context_text = "\n\n".join(context_parts)
-    sources_list = "\n".join(f"- {s}" for s in sorted(sources_seen))
 
     return f"""You are a precise question-answering system.
 
@@ -36,7 +33,7 @@ STRICT RULES:
 2. If the answer is not in the context, respond exactly: "I don't have enough information in the provided documents to answer this question."
 3. Do NOT make up or infer information beyond what is explicitly stated.
 4. Keep your answer concise and direct.
-5. At the end of your answer, list the source documents you used.
+5. Do NOT list or mention source documents in your answer. Sources are displayed separately.
 
 QUESTION:
 {query}
@@ -44,10 +41,7 @@ QUESTION:
 CONTEXT:
 {context_text}
 
-AVAILABLE SOURCES:
-{sources_list}
-
-Provide your answer below. End with a "Sources:" section listing only the documents you actually used."""
+Provide your answer below."""
 
 
 def get_query_rewrite_prompt(chat_history_text, new_question):

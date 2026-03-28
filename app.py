@@ -20,39 +20,90 @@ MAX_HISTORY = 6  # keep last 6 messages (3 turns) to prevent token overflow
 
 # ─── Page Configuration ─────────────────────────────────────────────
 st.set_page_config(
-    page_title="RAG Chat",
-    page_icon="🔍",
-    layout="centered",
-    initial_sidebar_state="collapsed",
+    page_title="Document QA System",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 # ─── Custom Styling ─────────────────────────────────────────────────
 st.markdown("""
 <style>
-    /* Clean, minimal styling */
-    .stApp {
-        max-width: 900px;
-        margin: 0 auto;
+    /* Typography and base */
+    .block-container {
+        max-width: 860px;
+        padding-top: 2rem;
+        padding-bottom: 2rem;
     }
-    .source-box {
-        background-color: #f0f2f6;
-        border-radius: 8px;
-        padding: 12px 16px;
-        margin-top: 8px;
-        font-size: 0.85em;
-        border-left: 3px solid #4A90D9;
+
+    /* Header */
+    .app-header {
+        margin-bottom: 0.25rem;
     }
-    .header-subtitle {
+    .app-header h1 {
+        font-size: 1.55rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 0;
+        letter-spacing: -0.01em;
+    }
+    .app-subtitle {
         color: #6b7280;
-        font-size: 0.9em;
-        margin-top: -10px;
+        font-size: 0.88rem;
+        margin-top: 2px;
+        margin-bottom: 0;
+    }
+
+    /* Chat message spacing */
+    .stChatMessage {
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+
+    /* Sidebar */
+    section[data-testid="stSidebar"] {
+        width: 280px !important;
+    }
+    section[data-testid="stSidebar"] .block-container {
+        padding-top: 1.5rem;
+    }
+    .sidebar-heading {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.6rem;
+    }
+    .sidebar-item {
+        font-size: 0.88rem;
+        color: #374151;
+        padding: 0.2rem 0;
+        line-height: 1.6;
+    }
+    .sidebar-label {
+        color: #6b7280;
+    }
+    .sidebar-desc {
+        font-size: 0.82rem;
+        color: #9ca3af;
+        margin-top: 0.75rem;
+        line-height: 1.5;
+    }
+
+    /* Dark mode overrides */
+    @media (prefers-color-scheme: dark) {
+        .app-header h1 { color: #f3f4f6; }
+        .app-subtitle { color: #9ca3af; }
+        .sidebar-item { color: #d1d5db; }
+        .sidebar-label { color: #9ca3af; }
+        .sidebar-desc { color: #6b7280; }
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ─── Header ─────────────────────────────────────────────────────────
-st.title("🔍 RAG Chat")
-st.markdown('<p class="header-subtitle">Ask questions about your documents — powered by multi-query retrieval, hybrid search, and RRF ranking.</p>', unsafe_allow_html=True)
+st.markdown('<div class="app-header"><h1>Document Question Answering System</h1></div>', unsafe_allow_html=True)
+st.markdown('<p class="app-subtitle">Query your document set using retrieval-augmented generation</p>', unsafe_allow_html=True)
 st.divider()
 
 # ─── Session State ───────────────────────────────────────────────────
@@ -90,12 +141,13 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
         if msg.get("sources"):
-            with st.expander("📄 Sources", expanded=False):
+            with st.expander("Sources", expanded=False):
                 for src in msg["sources"]:
-                    st.markdown(f"- `{src}`")
+                    filename = src.rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
+                    st.markdown(f"- {filename}")
 
 # ─── Chat Input ─────────────────────────────────────────────────────
-if user_input := st.chat_input("Ask a question about your documents..."):
+if user_input := st.chat_input("Enter your question..."):
 
     # Display user message
     st.session_state.messages.append({"role": "user", "content": user_input})
@@ -104,7 +156,7 @@ if user_input := st.chat_input("Ask a question about your documents..."):
 
     # Generate response
     with st.chat_message("assistant"):
-        with st.spinner("Searching documents and generating answer..."):
+        with st.spinner("Processing..."):
             # Query rewriting for follow-ups
             search_query = rewrite_query_if_needed(user_input)
 
@@ -123,9 +175,10 @@ if user_input := st.chat_input("Ask a question about your documents..."):
 
         # Display sources
         if sources:
-            with st.expander("📄 Sources", expanded=False):
+            with st.expander("Sources", expanded=False):
                 for src in sources:
-                    st.markdown(f"- `{src}`")
+                    filename = src.rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
+                    st.markdown(f"- {filename}")
 
     # Update session state
     st.session_state.messages.append({
@@ -138,16 +191,25 @@ if user_input := st.chat_input("Ask a question about your documents..."):
 
 # ─── Sidebar ────────────────────────────────────────────────────────
 with st.sidebar:
-    st.header("⚙️ About")
-    st.markdown("""
-    **Pipeline:**
-    1. Multi-query generation
-    2. Hybrid retrieval (BM25 + Vector)
-    3. Reciprocal Rank Fusion
-    4. LLM answer (Gemini)
-    """)
+    st.markdown('<p class="sidebar-heading">System Info</p>', unsafe_allow_html=True)
 
-    if st.button("🗑️ Clear Chat", use_container_width=True):
+    st.markdown(
+        '<div class="sidebar-item"><span class="sidebar-label">Retrieval:</span> Hybrid (BM25 + Vector)</div>'
+        '<div class="sidebar-item"><span class="sidebar-label">Ranking:</span> RRF</div>'
+        '<div class="sidebar-item"><span class="sidebar-label">Query Expansion:</span> Enabled</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<p class="sidebar-desc">'
+        'This system retrieves and ranks relevant document chunks before generating answers.'
+        '</p>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("")  # spacer
+
+    if st.button("Clear Chat", use_container_width=True):
         st.session_state.messages = []
         st.session_state.chat_history = []
         st.rerun()
