@@ -1,4 +1,4 @@
-# RAG System (Built from Scratch)
+# RAG System 
 
 This is a Retrieval-Augmented Generation (RAG) system I built to actually understand how modern AI systems retrieve and reason over documents instead of just blindly calling APIs.
 
