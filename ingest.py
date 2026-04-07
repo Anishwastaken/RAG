@@ -15,7 +15,7 @@ from utils.data_loader import load_documents
 
 load_dotenv()
 
-# ─── Configuration ───────────────────────────────────────────────────
+# Configuration
 CHROMA_DIR = "db/chroma_db"
 CHUNK_SIZE = 800
 CHUNK_OVERLAP = 100

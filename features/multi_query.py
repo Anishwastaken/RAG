@@ -23,7 +23,7 @@ def generate_multi_queries(llm, query):
     response = llm.invoke(prompt)
     raw_text = response.content if hasattr(response, "content") else str(response)
 
-    # Parse numbered lines (e.g. "1. ...", "2. ...", "3. ...")
+    # Parse numbered lines
     lines = raw_text.strip().split("\n")
     alternatives = []
     for line in lines:

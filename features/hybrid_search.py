@@ -13,8 +13,8 @@ def create_hybrid_retriever(vectorstore, documents, k=5, bm25_weight=0.3, vector
         vectorstore: ChromaDB vector store instance
         documents: List of Document objects (for BM25 indexing)
         k: Number of results to retrieve from each method
-        bm25_weight: Weight for BM25 results (default: 0.3)
-        vector_weight: Weight for vector results (default: 0.7)
+        bm25_weight: Weight for BM25 results
+        vector_weight: Weight for vector results
 
     Returns:
         EnsembleRetriever combining both methods
