@@ -84,9 +84,7 @@ pip install -r requirements.txt
 ```
 ollama serve
 ```
-```
-ollama pull nomic-embed-text
-```
+
 
 3. Add your Gemini API key in `.env`
 
