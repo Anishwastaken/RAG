@@ -133,8 +133,8 @@ Answer: Retrieval query: Who owns Tesla, Inc.?
 
 ---
 
-## What I’d improve next
-
+## What I’d add next
+* Deployment is currently being worked on and will be available soon.
 * Add evaluation (measure accuracy vs baseline RAG)
 * Try reranking models instead of RRF
 * Support PDFs / larger datasets
