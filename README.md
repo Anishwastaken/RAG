@@ -82,6 +82,9 @@ pip install -r requirements.txt
 2. Run Ollama (for embeddings)
 
 ```
+ollama serve
+```
+```
 ollama pull nomic-embed-text
 ```
 
