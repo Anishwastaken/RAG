@@ -98,10 +98,10 @@ ollama pull nomic-embed-text
 python ingest.py
 ```
 
-6. Start the app
+6. Ask query
 
 ```
-streamlit run app.py
+python query.py
 ```
 
 ---
@@ -109,15 +109,19 @@ streamlit run app.py
 ## Example
 
 ```
-Q: How much did Microsoft pay for GitHub?
+Q: what is tesla?
 
 → System generates multiple query variations
 → Retrieves documents using BM25 + vector search
 → Merges rankings using RRF
 → Passes top chunks to LLM
 
-Answer: $7.5 billion
-Source: Microsoft.txt
+Answer:Tesla, Inc. is an American multinational automotive and clean energy company. It is headquartered in Austin, Texas, and designs, manufactures, and sells battery electric vehicles (BEVs), stationary battery energy storage devices from home to grid-scale, solar panels and solar shingles, and related products and services. Tesla was incorporated in July 2003 by Martin Eberhard and Marc Tarpenning as Tesla Motors, and its name is a tribute to inventor and electrical engineer Nikola Tesla.
+Source: Tesla.txt
+
+Q: Who owns it ?
+Answer: Retrieval query: Who owns Tesla, Inc.?
+ Elon Musk owns 12.9% of Tesla. Other major shareholders include The Vanguard Group (7.2%), BlackRock (4.5%), State Street Corporation (3.4%), Geode Capital Management (1.7%), Capital Research & Management (World Investors) (1.3%), BlackRock Life (1.2%), Eaton Vance (1.0%), Norges Bank (1.0%), and Fidelity Investments (0.9%). The remaining 64.9% is owned by others.
 ```
 
 ---
