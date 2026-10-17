@@ -17,7 +17,7 @@ from langchain_chroma import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from config import CHROMA_DIR, LLM_MODEL, get_embeddings
+from config import CHROMA_DIR, LLM_MODEL, LIGHT_LLM_MODEL, get_embeddings
 from ingest import split_documents
 from utils.data_loader import load_documents
 from utils.prompt import get_qa_prompt
@@ -32,9 +32,9 @@ TOP_K_RETRIEVAL = 3   # documents per query per retriever
 TOP_N_FINAL = 3      # documents after RRF
 
 
-def _get_llm():
-    """Initialize the Gemini LLM."""
-    return ChatGoogleGenerativeAI(model=LLM_MODEL, temperature=0)
+def _get_llm(model=LLM_MODEL):
+    """Initialize a Gemini LLM."""
+    return ChatGoogleGenerativeAI(model=model, temperature=0)
 
 
 def _get_vectorstore():
@@ -46,7 +46,8 @@ def _get_vectorstore():
     )
 
 
-def run_rag(query, search_query=None, chat_history=None, documents=None, vectorstore=None):
+def run_rag(query, search_query=None, chat_history=None, documents=None, vectorstore=None,
+            use_multi_query=True):
     """
     Run the full RAG pipeline.
 
@@ -66,6 +67,8 @@ def run_rag(query, search_query=None, chat_history=None, documents=None, vectors
         vectorstore: Optional pre-built Chroma vectorstore.
                      When provided, this is used for semantic retrieval instead
                      of loading the default persisted store.
+        use_multi_query: When False, skip query expansion and retrieve with the
+                         single query only (saves one LLM call per question).
 
     Returns:
         dict with keys:
@@ -99,7 +102,11 @@ def run_rag(query, search_query=None, chat_history=None, documents=None, vectors
         active_documents = split_documents(load_documents())
 
     # ── Step 1: Multi-query generation ──────────────────────────────
-    all_queries = generate_multi_queries(llm, retrieval_query)
+    if use_multi_query:
+        all_queries = generate_multi_queries(_get_llm(LIGHT_LLM_MODEL), retrieval_query)
+    else:
+        all_queries = [retrieval_query]
+        print("[Multi-Query] Disabled — using the single query only")
 
     # ── Step 2: Hybrid retrieval for each query ─────────────────────
     hybrid_retriever = create_hybrid_retriever(
@@ -136,7 +143,7 @@ def run_rag(query, search_query=None, chat_history=None, documents=None, vectors
 
     print(f"[Pipeline] Sending {len(top_docs)} documents to LLM...")
     result = llm.invoke(messages)
-    answer = result.content
+    answer = result.text
 
     # Extract unique source paths
     sources = sorted(set(

@@ -13,13 +13,14 @@ Usage:
     streamlit run app.py
 """
 
+import re
 import sys
 
 import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
-from config import LLM_MODEL
+from config import LIGHT_LLM_MODEL
 
 from core.pipeline import run_rag
 from utils.prompt import get_query_rewrite_prompt
@@ -129,7 +130,8 @@ if "messages" not in st.session_state:
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []      # LangChain message objects for pipeline
 if "llm" not in st.session_state:
-    st.session_state.llm = ChatGoogleGenerativeAI(model=LLM_MODEL, temperature=0)
+    # Only used for follow-up rewriting, so the light model is enough
+    st.session_state.llm = ChatGoogleGenerativeAI(model=LIGHT_LLM_MODEL, temperature=0)
 
 # NEW — Upload-related session state keys
 # uploaded_chunks:      list[Document] – chunked text from uploaded file(s)
@@ -165,10 +167,27 @@ def rewrite_query_if_needed(question):
 
         prompt = get_query_rewrite_prompt(history_text, question)
         result = st.session_state.llm.invoke(prompt)
-        rewritten = result.content.strip()
+        rewritten = result.text.strip()
         return rewritten if rewritten else None
     except Exception:
         return None
+
+
+def quota_error_message(exc):
+    """Return a friendly message if exc is a Gemini rate-limit error, else None."""
+    text = str(exc)
+    if "RESOURCE_EXHAUSTED" not in text and "429" not in text:
+        return None
+    model = re.search(r"model: ([\w.\-]+)", text)
+    retry = re.search(r"retry in ((?:\d+h)?(?:\d+m)?)", text)
+    msg = "Gemini API limit reached"
+    if model:
+        msg += f" for `{model.group(1)}`"
+    msg += "."
+    if retry and retry.group(1):
+        msg += f" Try again in about {retry.group(1)}."
+    msg += " Turning off Query Expansion in the sidebar uses fewer requests per question."
+    return msg
 
 
 # ─── Display Chat History ───────────────────────────────────────────
@@ -201,24 +220,29 @@ if user_input := st.chat_input("Enter your question..."):
             # If no upload is active, run_rag() receives no extra kwargs and
             # falls back to the persisted ChromaDB + docs/ directory — exactly
             # as it worked before this feature was added.
+            rag_kwargs = dict(
+                query=user_input,
+                search_query=search_query,
+                chat_history=st.session_state.chat_history[-MAX_HISTORY:],
+                use_multi_query=st.session_state.get("use_multi_query", True),
+            )
             if (
                 st.session_state.uploaded_chunks is not None
                 and st.session_state.uploaded_vectorstore is not None
             ):
-                result = run_rag(
-                    query=user_input,
-                    search_query=search_query,
-                    chat_history=st.session_state.chat_history[-MAX_HISTORY:],
-                    documents=st.session_state.uploaded_chunks,          # NEW
-                    vectorstore=st.session_state.uploaded_vectorstore,   # NEW
-                )
-            else:
-                # Default path — unchanged from original
-                result = run_rag(
-                    query=user_input,
-                    search_query=search_query,
-                    chat_history=st.session_state.chat_history[-MAX_HISTORY:],
-                )
+                rag_kwargs["documents"] = st.session_state.uploaded_chunks
+                rag_kwargs["vectorstore"] = st.session_state.uploaded_vectorstore
+
+            try:
+                result = run_rag(**rag_kwargs)
+            except Exception as exc:
+                friendly = quota_error_message(exc)
+                if friendly is None:
+                    raise
+                # Drop the unanswered question so the history stays consistent
+                st.session_state.messages.pop()
+                st.warning(friendly)
+                st.stop()
 
             answer = result["answer"]
             sources = result["sources"]
@@ -248,9 +272,16 @@ with st.sidebar:
 
     st.markdown(
         '<div class="sidebar-item"><span class="sidebar-label">Retrieval:</span> Hybrid (BM25 + Vector)</div>'
-        '<div class="sidebar-item"><span class="sidebar-label">Ranking:</span> RRF</div>'
-        '<div class="sidebar-item"><span class="sidebar-label">Query Expansion:</span> Enabled</div>',
+        '<div class="sidebar-item"><span class="sidebar-label">Ranking:</span> RRF</div>',
         unsafe_allow_html=True,
+    )
+
+    st.toggle(
+        "Query Expansion",
+        value=True,
+        key="use_multi_query",
+        help="Rewrites each question 3 ways for better recall. Costs one extra "
+             "Gemini request per question — turn off to save free-tier quota.",
     )
 
     st.markdown(

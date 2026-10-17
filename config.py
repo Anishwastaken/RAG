@@ -8,7 +8,10 @@ from functools import lru_cache
 CHROMA_DIR = "db/chroma_db"
 CHUNK_SIZE = 800
 CHUNK_OVERLAP = 100
-LLM_MODEL = "gemini-2.5-flash"
+LLM_MODEL = "gemini-2.5-flash"             # writes the final answer
+# Query rewriting and multi-query generation are simple tasks; running them on
+# a lighter model spreads usage across two per-model free-tier quotas.
+LIGHT_LLM_MODEL = "gemini-3.5-flash-lite"
 
 # Runs in-process via sentence-transformers: no server, no API key, no quota.
 # Changing this requires re-running ingest.py (old vectors are incompatible).
