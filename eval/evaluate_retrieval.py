@@ -32,6 +32,7 @@ import os
 import re
 import sys
 import time
+import uuid
 
 # Allow `python eval/evaluate_retrieval.py` from the project root
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -39,7 +40,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from langchain_chroma import Chroma
 from langchain_community.retrievers import BM25Retriever
 
-from config import CHROMA_DIR, LIGHT_LLM_MODEL, get_embeddings
+from config import LIGHT_LLM_MODEL, get_embeddings
 from ingest import split_documents
 from utils.data_loader import load_documents
 from features.hybrid_search import create_hybrid_retriever
@@ -157,11 +158,15 @@ def main():
     with open(QUESTIONS_PATH, encoding="utf-8") as f:
         questions = json.load(f)
 
-    print("[Eval] Loading chunks and vector store...")
+    # Build a fresh in-memory index from the current loader/chunker instead of
+    # reading db/chroma_db, so results always reflect the code as it is now
+    # (and the running app's locked store is never touched).
     chunks = quietly(split_documents, quietly(load_documents))
-    vectorstore = Chroma(
-        persist_directory=CHROMA_DIR,
-        embedding_function=get_embeddings(),
+    print(f"[Eval] Embedding {len(chunks)} chunks into a temporary index...")
+    vectorstore = Chroma.from_documents(
+        documents=chunks,
+        embedding=get_embeddings(),
+        collection_name=f"eval_{uuid.uuid4().hex[:8]}",
         collection_metadata={"hnsw:space": "cosine"},
     )
 

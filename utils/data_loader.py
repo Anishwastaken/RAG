@@ -6,18 +6,35 @@ Streamlit-uploaded in-memory file bytes (PDF, DOCX, TXT, MD).
 
 import os
 import io
+import re
 import tempfile
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_core.documents import Document
 
 
-def load_documents(docs_path="docs"):
+# A line that is exactly one of these headings starts the back matter of a
+# Wikipedia-style article (footnotes, then citations, external links, ...).
+_REFERENCE_HEADING = re.compile(r"^(Notes|References|Citations)[ \t]*$", re.MULTILINE)
+
+
+def strip_reference_sections(text):
+    """
+    Drop everything from the first Notes/References/Citations heading onward.
+
+    In the default docs this back matter is ~65% of the text (URLs, "Retrieved
+    on ..." lines) and only adds noise chunks that compete with real content.
+    """
+    match = _REFERENCE_HEADING.search(text)
+    return text[:match.start()].rstrip() if match else text
+
+
+def load_documents(docs_path="docs", strip_references=True):
     """
     Load all .txt files from the specified directory (default knowledge base).
-    This function is unchanged — all existing callers continue to work.
 
     Args:
         docs_path: Path to the documents directory (default: "docs")
+        strip_references: Remove reference/citation sections (default: True)
 
     Returns:
         List of loaded Document objects
@@ -40,6 +57,13 @@ def load_documents(docs_path="docs"):
         raise FileNotFoundError(
             f"No .txt files found in '{docs_path}'. Add your documents first."
         )
+
+    if strip_references:
+        before = sum(len(d.page_content) for d in documents)
+        for doc in documents:
+            doc.page_content = strip_reference_sections(doc.page_content)
+        after = sum(len(d.page_content) for d in documents)
+        print(f"[Loader] Stripped reference sections: {before:,} → {after:,} characters")
 
     print(f"[Loader] Loaded {len(documents)} document(s) from '{docs_path}'")
     return documents
