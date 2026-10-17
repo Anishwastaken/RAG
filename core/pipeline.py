@@ -50,7 +50,7 @@ def _get_vectorstore():
 
 
 @lru_cache(maxsize=1)
-def _get_default_retriever():
+def get_default_retriever():
     """
     Build the hybrid retriever for the default knowledge base once per process,
     instead of reloading docs and rebuilding BM25 on every question.
@@ -114,7 +114,7 @@ def run_rag(query, search_query=None, chat_history=None, documents=None, vectors
         print(f"[Pipeline] Using {len(documents)} caller-supplied documents (uploaded file mode)")
         hybrid_retriever = create_hybrid_retriever(vectorstore, documents, k=TOP_K_RETRIEVAL)
     else:
-        hybrid_retriever = _get_default_retriever()
+        hybrid_retriever = get_default_retriever()
 
     # ── Step 1: Multi-query generation ──────────────────────────────
     if use_multi_query:

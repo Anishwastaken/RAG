@@ -23,7 +23,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 from config import LIGHT_LLM_MODEL, MAX_QUESTIONS_PER_SESSION, MAX_QUESTIONS_PER_DAY
 
-from core.pipeline import run_rag
+from core.pipeline import run_rag, get_default_retriever
 from utils.prompt import get_query_rewrite_prompt
 from utils.upload_processor import process_uploaded_files   # NEW
 
@@ -124,6 +124,12 @@ st.markdown("""
 st.markdown('<div class="app-header"><h1>Document Question Answering System</h1></div>', unsafe_allow_html=True)
 st.markdown('<p class="app-subtitle">Query your document set using retrieval-augmented generation</p>', unsafe_allow_html=True)
 st.divider()
+
+# ─── Search Index ────────────────────────────────────────────────────
+# Cached after the first call, so this is instant on every rerun. On a fresh
+# deployment it builds the vector index, so say so instead of a silent wait.
+with st.spinner("Preparing the search index (first start takes about a minute)..."):
+    get_default_retriever()
 
 # ─── Session State ───────────────────────────────────────────────────
 if "questions_asked" not in st.session_state:
