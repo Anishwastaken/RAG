@@ -7,19 +7,16 @@ Usage:
     python ingest.py
 """
 
+import os
+import shutil
+
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_ollama import OllamaEmbeddings
 from langchain_chroma import Chroma
 from dotenv import load_dotenv
+from config import CHROMA_DIR, CHUNK_SIZE, CHUNK_OVERLAP, get_embeddings
 from utils.data_loader import load_documents
 
 load_dotenv()
-
-# Configuration
-CHROMA_DIR = "db/chroma_db"
-CHUNK_SIZE = 800
-CHUNK_OVERLAP = 100
-EMBEDDING_MODEL = "nomic-embed-text"
 
 
 def split_documents(documents, chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP):
@@ -39,13 +36,17 @@ def split_documents(documents, chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLA
 
 def create_vector_store(chunks, persist_directory=CHROMA_DIR):
     """Create and persist ChromaDB vector store from document chunks."""
-    print(f"[Ingest] Creating embeddings and storing in ChromaDB...")
+    # Rebuild from scratch: from_documents appends to an existing store, which
+    # would duplicate chunks or mix vectors from different embedding models.
+    if os.path.exists(persist_directory):
+        print(f"[Ingest] Removing old vector store at '{persist_directory}'...")
+        shutil.rmtree(persist_directory)
 
-    embedding_model = OllamaEmbeddings(model=EMBEDDING_MODEL)
+    print(f"[Ingest] Creating embeddings and storing in ChromaDB...")
 
     vectorstore = Chroma.from_documents(
         documents=chunks,
-        embedding=embedding_model,
+        embedding=get_embeddings(),
         persist_directory=persist_directory,
         collection_metadata={"hnsw:space": "cosine"},
     )

@@ -7,6 +7,7 @@ Usage:
 """
 
 from dotenv import load_dotenv
+from config import LLM_MODEL
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 
@@ -50,7 +51,7 @@ def start_chat():
     print("=" * 50)
     print("Ask questions about your documents. Type 'quit' to exit.\n")
 
-    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
+    llm = ChatGoogleGenerativeAI(model=LLM_MODEL, temperature=0)
     chat_history = []
 
     while True:

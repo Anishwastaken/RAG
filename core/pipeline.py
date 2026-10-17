@@ -14,10 +14,10 @@ v2 additions:
 
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
-from langchain_ollama import OllamaEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from config import CHROMA_DIR, LLM_MODEL, get_embeddings
 from ingest import split_documents
 from utils.data_loader import load_documents
 from utils.prompt import get_qa_prompt
@@ -28,9 +28,6 @@ from features.rrf import reciprocal_rank_fusion
 load_dotenv()
 
 # ─── Configuration ───────────────────────────────────────────────────
-CHROMA_DIR = "db/chroma_db"
-EMBEDDING_MODEL = "nomic-embed-text"
-LLM_MODEL = "gemini-2.5-flash"
 TOP_K_RETRIEVAL = 3   # documents per query per retriever
 TOP_N_FINAL = 3      # documents after RRF
 
@@ -42,10 +39,9 @@ def _get_llm():
 
 def _get_vectorstore():
     """Load the existing ChromaDB vector store."""
-    embedding_model = OllamaEmbeddings(model=EMBEDDING_MODEL)
     return Chroma(
         persist_directory=CHROMA_DIR,
-        embedding_function=embedding_model,
+        embedding_function=get_embeddings(),
         collection_metadata={"hnsw:space": "cosine"},
     )
 

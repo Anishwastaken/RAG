@@ -2,7 +2,8 @@ langchain
 langchain-classic
 langchain-community
 langchain-chroma
-langchain-ollama
+langchain-huggingface
+sentence-transformers
 langchain-google-genai
 chromadb
 python-dotenv

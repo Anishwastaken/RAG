@@ -79,24 +79,17 @@ db/              # vector store
 pip install -r requirements.txt
 ```
 
-2. Run Ollama (for embeddings)
+2. Add your Gemini API key in `.env`
 
-```
-ollama serve
-```
+3. Add documents in `docs/`
 
-
-3. Add your Gemini API key in `.env`
-
-4. Add documents in `docs/`
-
-5. Run ingestion
+4. Run ingestion (the embedding model, `BAAI/bge-small-en-v1.5`, downloads automatically on first run)
 
 ```
 python ingest.py
 ```
 
-6. Ask query
+5. Ask query
 
 ```
 python query.py
@@ -143,7 +136,7 @@ Answer: Retrieval query: Who owns Tesla, Inc.?
 
 ## Tech stack
 
-LangChain, ChromaDB, Ollama, Gemini, Streamlit, BM25
+LangChain, ChromaDB, sentence-transformers (BGE embeddings), Gemini, Streamlit, BM25
 
 ---
 

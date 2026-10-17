@@ -19,6 +19,7 @@ import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
+from config import LLM_MODEL
 
 from core.pipeline import run_rag
 from utils.prompt import get_query_rewrite_prompt
@@ -128,7 +129,7 @@ if "messages" not in st.session_state:
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []      # LangChain message objects for pipeline
 if "llm" not in st.session_state:
-    st.session_state.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
+    st.session_state.llm = ChatGoogleGenerativeAI(model=LLM_MODEL, temperature=0)
 
 # NEW — Upload-related session state keys
 # uploaded_chunks:      list[Document] – chunked text from uploaded file(s)

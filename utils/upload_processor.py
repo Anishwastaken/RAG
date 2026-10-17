@@ -13,15 +13,10 @@ st.session_state. All configuration constants mirror ingest.py for consistency.
 
 import uuid
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_ollama import OllamaEmbeddings
 from langchain_chroma import Chroma
 
+from config import CHUNK_SIZE, CHUNK_OVERLAP, get_embeddings
 from utils.data_loader import load_uploaded_files
-
-# ─── Mirror ingest.py constants exactly ──────────────────────────────────────
-CHUNK_SIZE = 800
-CHUNK_OVERLAP = 100
-EMBEDDING_MODEL = "nomic-embed-text"
 
 # Unique collection name prefix; a UUID suffix prevents collection collisions
 # when a new file replaces the previous one within the same Chroma process.
@@ -75,11 +70,9 @@ def process_uploaded_files(uploaded_files):
     collection_name = UPLOAD_COLLECTION_PREFIX + uuid.uuid4().hex[:8]
     print(f"[UploadProcessor] Building in-memory vectorstore (collection='{collection_name}')...")
 
-    embedding_model = OllamaEmbeddings(model=EMBEDDING_MODEL)
-
     vectorstore = Chroma.from_documents(
         documents=chunks,
-        embedding=embedding_model,
+        embedding=get_embeddings(),
         # No persist_directory → purely in-memory; disappears when process exits.
         # This means uploaded docs NEVER pollute the permanent ChromaDB store.
         collection_name=collection_name,
