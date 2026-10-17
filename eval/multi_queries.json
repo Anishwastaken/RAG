@@ -1,0 +1,254 @@
+{
+  "goog-01": [
+    "At what price per share did Google sell stock in its IPO?",
+    "What was the initial public offering price for a share of Google stock?",
+    "How much did Alphabet (Google) price its shares at during its 2004 IPO?",
+    "Google IPO share price value"
+  ],
+  "goog-02": [
+    "How much of their working time are Google engineers encouraged to spend on side projects?",
+    "What percentage of work hours do Google employees dedicate to personal projects under their innovation policy?",
+    "How does Google's 20% time rule work for software engineers and side projects?",
+    "What is the fraction of time Google allots to its developers for independent creative work?"
+  ],
+  "goog-03": [
+    "Which company did Google replace as Yahoo's default search provider?",
+    "What search engine did Yahoo use before switching to Google as its default provider?",
+    "Which company provided search results for Yahoo prior to their partnership with Google?",
+    "Who was Yahoo's primary search partner before Google took over the default role?"
+  ],
+  "goog-04": [
+    "What is the address of the office complex Google leased from Silicon Graphics?",
+    "Where is the Silicon Graphics office park that Google rented located?",
+    "Google leased office space from SGI - what is the street address?",
+    "Location of the former Silicon Graphics campus now leased by Google"
+  ],
+  "goog-05": [
+    "By what year does Google want its data centers and offices to run only on carbon-free energy?",
+    "What is Google's target date for powering all operations entirely with carbon-free energy?",
+    "Google 100 percent carbon-free energy by what year deadline?",
+    "When does Google expect to achieve a fully carbon-free energy supply for its facilities?"
+  ],
+  "goog-06": [
+    "How large was the fine Europe's top court imposed on Google over shopping comparison?",
+    "What is the monetary penalty EU courts ordered Google to pay for anti-competitive shopping practices?",
+    "How much did the European Court of Justice fine Google for its comparison shopping antitrust violation?",
+    "EU antitrust fine amount for Google shopping monopoly case"
+  ],
+  "goog-07": [
+    "What share of Google's workforce were women according to the 2020 diversity report?",
+    "Percentage of female employees at Google in their 2020 diversity report",
+    "Google 2020 diversity report female workforce proportion",
+    "How many women worked at Google based on the 2020 diversity data?"
+  ],
+  "goog-08": [
+    "How much did Google reportedly pay to bring Ubisoft games to Stadia?",
+    "What was the reported cost for Google to secure Ubisoft titles for Stadia?",
+    "How much money did Ubisoft receive from Google for Stadia game integration?",
+    "Financial details of the Google Stadia partnership with Ubisoft for game porting."
+  ],
+  "msft-01": [
+    "What product was Microsoft originally founded to develop and sell?",
+    "What was the first software program created and marketed by Microsoft?",
+    "Which original product launch marked the beginning of Microsoft's business?",
+    "What did Bill Gates and Paul Allen create when they first started Microsoft?"
+  ],
+  "msft-02": [
+    "Who succeeded Bill Gates as Microsoft's chief executive?",
+    "Who took over as CEO of Microsoft after Bill Gates?",
+    "What is the name of the person who replaced Bill Gates as Microsoft's chief executive officer?",
+    "Microsoft CEO succession: Who followed Bill Gates in this role?"
+  ],
+  "msft-03": [
+    "Which custom chip did Microsoft design for running large language models?",
+    "What is the name of Microsoft's proprietary AI accelerator chip built for LLMs?",
+    "Microsoft custom silicon processor for machine learning workloads",
+    "Which in-house semiconductor did Microsoft develop for generative AI and large language models?"
+  ],
+  "msft-04": [
+    "How many HoloLens headsets did Microsoft agree to supply to the US military?",
+    "What is the total number of Microsoft HoloLens units ordered by the United States Army?",
+    "How many augmented reality headsets is Microsoft contracted to provide for US soldiers?",
+    "Size of the Microsoft military contract for HoloLens supply."
+  ],
+  "msft-05": [
+    "How many jobs did Satya Nadella say Microsoft would cut in January 2023?",
+    "Microsoft layoffs January 2023 number announced by Satya Nadella",
+    "How many employees did Microsoft lay off in early 2023 according to Satya Nadella?",
+    "Satya Nadella Microsoft job cuts total January 2023"
+  ],
+  "msft-06": [
+    "What stake in the London Stock Exchange Group did Microsoft acquire?",
+    "How many shares of the London Stock Exchange Group did Microsoft buy?",
+    "What is the size of Microsoft's equity investment in the LSEG?",
+    "Which percentage of the London Stock Exchange Group does Microsoft own?"
+  ],
+  "msft-07": [
+    "How much did Microsoft spend on carbon credits from Heirloom Carbon?",
+    "What was the financial value of Microsoft's carbon removal purchase agreement with Heirloom Carbon?",
+    "Heirloom Carbon Microsoft contract size and cost details",
+    "How much funding did Heirloom receive from Microsoft for carbon credits?"
+  ],
+  "msft-08": [
+    "What was the name of Bill Gates's 1995 internal memo about the internet?",
+    "Title of Bill Gates's internet memo from 1995",
+    "What did Bill Gates title his famous 1995 memo on the internet tidal wave?",
+    "Bill Gates 1995 strategic memo name regarding the internet"
+  ],
+  "msft-09": [
+    "Why did the European Union fine Microsoft again in February 2008?",
+    "What caused the European Commission to penalize Microsoft in February 2008?",
+    "Reasons for the antitrust fine imposed on Microsoft by the EU in early 2008",
+    "Why was Microsoft issued a sanction by EU regulators in February 2008?"
+  ],
+  "nvda-01": [
+    "Where does the name Nvidia come from?",
+    "What is the etymology of the brand name Nvidia?",
+    "How did the graphics card company Nvidia get its name?",
+    "Origin of the name Nvidia Corporation"
+  ],
+  "nvda-02": [
+    "Why couldn't the founders name the company NVision?",
+    "What prevented NVIDIA's founders from using the name NVision?",
+    "Why was the original choice of NVision rejected for the graphics card company?",
+    "Trademark issues and the naming history of NVIDIA: why not NVision?"
+  ],
+  "nvda-03": [
+    "What was Nvidia's first graphics accelerator called?",
+    "What was the name of Nvidia's initial GPU product?",
+    "Which vintage graphics card was released as Nvidia's very first accelerator?",
+    "History of Nvidia products: what was their earliest graphics processing unit called?"
+  ],
+  "nvda-04": [
+    "Which physics engine developer did Nvidia buy in 2008?",
+    "What was the name of the physics simulation software company acquired by Nvidia in 2008?",
+    "Nvidia 2008 acquisition physics engine",
+    "Which company behind PhysX did Nvidia purchase back in 2008?"
+  ],
+  "nvda-05": [
+    "On what date did Nvidia overtake Microsoft and Apple as the most valuable company?",
+    "When did Nvidia become the world's most valuable publicly traded company, surpassing Microsoft and Apple?",
+    "Timeline of Nvidia's market cap surpassing Apple and Microsoft to claim the top spot.",
+    "Exact date of Nvidia taking the number one spot in market capitalization over Microsoft and Apple."
+  ],
+  "nvda-06": [
+    "What caused Nvidia's record single-day loss in market value in January 2025?",
+    "Why did Nvidia experience the biggest one-day drop in market cap in January 2025?",
+    "What factors led to Nvidia's historic stock market decline in January 2025?",
+    "Explanations for Nvidia's massive valuation drop and record single-day loss in January 2025"
+  ],
+  "nvda-07": [
+    "In which restaurant was Nvidia founded?",
+    "What is the name of the eatery where Nvidia was established?",
+    "Where did the founders of Nvidia meet to start the company?",
+    "Location of the restaurant where Nvidia's founding took place"
+  ],
+  "nvda-08": [
+    "How many members did the Inception startup program have in 2021?",
+    "NVIDIA Inception program participant count 2021",
+    "What was the total enrollment for the Inception startup initiative in the year 2021?",
+    "2021 statistics on the size of the Inception startup network"
+  ],
+  "spcx-01": [
+    "How many launches failed before Falcon 1 finally reached orbit?",
+    "What was the failure count of Falcon 1 flights prior to its first successful orbital insertion?",
+    "How many unsuccessful attempts did SpaceX make before successfully launching Falcon 1 into space?",
+    "Falcon 1 launch failure history leading up to the historic first successful orbit."
+  ],
+  "spcx-02": [
+    "What was the total value of SpaceX's COTS development contract?",
+    "How much funding did SpaceX receive for their COTS program?",
+    "What was the financial worth of the Commercial Orbital Transportation Services agreement awarded to SpaceX?",
+    "Total budget of the SpaceX COTS contract amount"
+  ],
+  "spcx-03": [
+    "What did the Starlink Mini antenna cost at its early access release?",
+    "How much was the Starlink Mini dish during the initial roll out?",
+    "Starlink Mini early access pricing details",
+    "What was the launch price of the Starlink Mini hardware?"
+  ],
+  "spcx-04": [
+    "According to NASA, how much did SpaceX spend developing the Falcon 9?",
+    "What was the total cost for SpaceX to develop the Falcon 9 rocket according to NASA data?",
+    "How much funding did SpaceX use to create the Falcon 9, based on NASA reports?",
+    "NASA estimates for SpaceX Falcon 9 development costs."
+  ],
+  "spcx-05": [
+    "What is the maximum payload Falcon 9 can deliver to orbit?",
+    "Falcon 9 maximum cargo capacity to low Earth orbit",
+    "How much weight can SpaceX's Falcon 9 lift into space?",
+    "Falcon 9 payload limits for orbital launches"
+  ],
+  "spcx-06": [
+    "How long is SpaceX's lease on Launch Complex 39A?",
+    "What is the expiration date of SpaceX's LC-39A lease agreement with NASA?",
+    "How many years was the lease granted to SpaceX for Kennedy Space Center's Pad 39A?",
+    "SpaceX Launch Complex 39A lease duration length"
+  ],
+  "spcx-07": [
+    "Who paid for the Inspiration4 private spaceflight?",
+    "Who funded the Inspiration4 mission?",
+    "What was the financial backer of the Inspiration4 civilian space trip?",
+    "Who was the billionaire sponsor of the Inspiration4 flight?"
+  ],
+  "spcx-08": [
+    "What went wrong on Starship's seventh test flight?",
+    "What caused the failure of SpaceX Starship flight 7?",
+    "Analysis of anomalies during the seventh Starship test mission.",
+    "Why did Starship's seventh integrated flight test fail?"
+  ],
+  "spcx-09": [
+    "What is the name of the drone ship SpaceX unveiled in July 2021?",
+    "What did SpaceX name the droneship introduced in July 2021?",
+    "SpaceX July 2021 autonomous spaceport drone ship designation",
+    "What is the title of the new SpaceX landing ship revealed in the summer of 2021?"
+  ],
+  "tsla-01": [
+    "Who incorporated Tesla Motors in 2003?",
+    "Who were the original founders of Tesla Motors when it was established in 2003?",
+    "What individuals are credited with founding Tesla in July 2003?",
+    "Which people started the electric car company Tesla Motors back in 2003?"
+  ],
+  "tsla-02": [
+    "How much bitcoin did Tesla buy in early 2021?",
+    "What was the total amount of Bitcoin purchased by Tesla in Q1 2021?",
+    "Tesla cryptocurrency investment 2021 Bitcoin volume",
+    "How many BTC did Elon Musk's company buy at the start of 2021?"
+  ],
+  "tsla-03": [
+    "For how long did Tesla accept bitcoin as payment before stopping?",
+    "What was the duration of the period when Tesla allowed Bitcoin transactions?",
+    "How many months did Bitcoin remain an active payment option at Tesla?",
+    "Timeline of Tesla accepting and discontinuing Bitcoin cryptocurrency payments."
+  ],
+  "tsla-04": [
+    "Which factory did Tesla take over through the SolarCity acquisition?",
+    "What manufacturing plant did Tesla acquire when they bought SolarCity?",
+    "Which production facility became part of Tesla following the SolarCity buyout?",
+    "SolarCity acquisition: what factory did Tesla gain in the deal?"
+  ],
+  "tsla-05": [
+    "What civil penalties did Tesla and Musk pay after the take-private tweet?",
+    "How much did Elon Musk and Tesla pay in SEC fines over the 2018 going-private tweet?",
+    "What were the financial regulatory consequences for Tesla and Musk following the funding secured tweet?",
+    "SEC settlement costs for Elon Musk and Tesla after privatization tweet."
+  ],
+  "tsla-06": [
+    "What was Tesla's share of the battery-electric car market in 2024?",
+    "How much of the 2024 EV market did Tesla control?",
+    "2024 Tesla battery-electric vehicle market share statistics",
+    "What percentage of all-electric car sales belonged to Tesla in 2024?"
+  ],
+  "tsla-07": [
+    "What is the maximum charging power of a Tesla Supercharger?",
+    "Highest kW output for Tesla Supercharger stations",
+    "What is the peak charging rate of V3 and V4 Tesla Superchargers?",
+    "Maximum electricity capacity of Tesla Supercharger posts"
+  ],
+  "tsla-08": [
+    "Which TV programme did Tesla lend two Roadsters to for testing in 2008?",
+    "What television show tested two Tesla Roadsters back in 2008?",
+    "Which motoring series featured a test drive of a pair of Tesla Roadsters in 2008?",
+    "In 2008, what TV show reviewed two vehicles from Tesla?"
+  ]
+}
