@@ -224,7 +224,7 @@ if user_input := st.chat_input("Enter your question..."):
                 query=user_input,
                 search_query=search_query,
                 chat_history=st.session_state.chat_history[-MAX_HISTORY:],
-                use_multi_query=st.session_state.get("use_multi_query", True),
+                use_multi_query=st.session_state.get("use_multi_query", False),
             )
             if (
                 st.session_state.uploaded_chunks is not None
@@ -278,10 +278,11 @@ with st.sidebar:
 
     st.toggle(
         "Query Expansion",
-        value=True,
+        value=False,
         key="use_multi_query",
-        help="Rewrites each question 3 ways for better recall. Costs one extra "
-             "Gemini request per question — turn off to save free-tier quota.",
+        help="Rewrites each question 3 ways before searching. Off by default: "
+             "in our evaluation it did not beat plain hybrid search, and it costs "
+             "one extra Gemini request per question.",
     )
 
     st.markdown(

@@ -47,7 +47,7 @@ def _get_vectorstore():
 
 
 def run_rag(query, search_query=None, chat_history=None, documents=None, vectorstore=None,
-            use_multi_query=True):
+            use_multi_query=False):
     """
     Run the full RAG pipeline.
 
@@ -67,8 +67,9 @@ def run_rag(query, search_query=None, chat_history=None, documents=None, vectors
         vectorstore: Optional pre-built Chroma vectorstore.
                      When provided, this is used for semantic retrieval instead
                      of loading the default persisted store.
-        use_multi_query: When False, skip query expansion and retrieve with the
-                         single query only (saves one LLM call per question).
+        use_multi_query: Expand the query into 3 LLM-written variations.
+                         Off by default: on eval/questions.json it lowered
+                         Hit@1 versus plain hybrid, and costs one LLM call.
 
     Returns:
         dict with keys:

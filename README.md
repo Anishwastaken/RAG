@@ -35,11 +35,36 @@ I wanted to go a bit deeper and explore:
 
 ## Features (stuff I actually focused on)
 
-* Multi-query generation (LLM rewrites the question into multiple variations)
 * Hybrid retrieval (BM25 + embeddings)
 * Reciprocal Rank Fusion for better ranking
+* Multi-query generation (LLM rewrites the question into multiple variations) — optional, off by default (see results)
 * Basic conversational memory (rewrites follow-up queries)
+* Upload your own PDF / DOCX / TXT / MD files and query them
+* A retrieval evaluation set to measure all of the above
 * Streamlit UI for testing
+
+---
+
+## Results
+
+I built a small evaluation set to check whether these techniques actually help instead of assuming they do: 42 questions over the 5 company docs, each paired with an evidence phrase copied from the source. A retrieval "hits" if a returned chunk contains that phrase.
+
+| Strategy | Hit@1 | Hit@3 | Hit@5 | MRR@10 |
+|---|---|---|---|---|
+| Vector only | 59.5% | 73.8% | 81.0% | 0.698 |
+| BM25 only | 57.1% | 83.3% | 85.7% | 0.702 |
+| **Hybrid (BM25 + vector)** | **66.7%** | **85.7%** | **90.5%** | **0.769** |
+| Hybrid + multi-query | 52.4% | 76.2% | 90.5% | 0.666 |
+
+What I found:
+
+* **Hybrid beats either method alone.** It finds the right chunk in the top 3 for 86% of questions, vs 74% for vector-only.
+* **Multi-query made things worse, which I didn't expect.** The LLM rewrites drop the exact wording from the docs and sometimes add details that aren't there (e.g. "etymology", "trademark issues"), and with equal-weight fusion they outvote the original question. Weighting the original 5× only brought it back to plain hybrid, never above it. For fact-lookup questions the original wording is already the best query, so I turned multi-query off by default.
+* **65% of the knowledge base was citation lists.** The docs are Wikipedia exports, and everything after the References heading is URLs and "Retrieved on…" lines. Stripping it cut the index from 1,870 to 644 chunks and raised vector-only Hit@1 from 52.4% to 59.5%.
+
+With 42 questions each one is worth ~2.4 points, so small differences are noise; the hybrid vs vector gap is the solid one.
+
+Reproduce with `python eval/evaluate_retrieval.py`. Per-question ranks are in [eval/results.md](eval/results.md).
 
 ---
 
@@ -48,6 +73,7 @@ I wanted to go a bit deeper and explore:
 ```
 rag-project/
 
+config.py        # models, chunk sizes, paths (one place)
 ingest.py        # loads + embeds documents
 query.py         # single query
 chat.py          # conversational mode
@@ -63,7 +89,13 @@ features/
 
 utils/
   prompt.py
-  data_loader.py
+  data_loader.py       # loads docs, strips reference sections
+  upload_processor.py  # chunks + embeds uploaded files
+
+eval/
+  questions.json         # 42 questions with evidence phrases
+  evaluate_retrieval.py  # compares retrieval strategies
+  results.md             # latest results
 
 docs/            # input files
 db/              # vector store
@@ -121,16 +153,18 @@ Answer: Retrieval query: Who owns Tesla, Inc.?
 
 * Retrieval quality matters more than the LLM
 * Simple vector search misses obvious results sometimes
-* Combining rankings (RRF) actually helps a lot
+* Combining keyword and vector search helps more than either alone
+* Measure before believing: multi-query sounded like an upgrade and wasn't
+* Data cleaning counts: removing citation noise was a free win
 * Prompting for grounded answers reduces hallucination
 
 ---
 
 ## What I’d add next
 * Deployment is currently being worked on and will be available soon.
-* Add evaluation (measure accuracy vs baseline RAG)
-* Try reranking models instead of RRF
-* Support PDFs / larger datasets
+* A cross-encoder reranker after fusion, measured against the current results
+* Tests + CI
+* Answer-quality evaluation (faithfulness), not just retrieval
 
 ---
 
