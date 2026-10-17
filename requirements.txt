@@ -9,4 +9,4 @@ python-dotenv
 rank-bm25
 streamlit
 pypdf
-python-docx
+docx2txt

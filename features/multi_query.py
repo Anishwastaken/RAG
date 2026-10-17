@@ -32,7 +32,7 @@ def generate_multi_queries(llm, query):
             alternatives.append(cleaned)
 
     # Always include the original query + up to 3 alternatives
-    all_queries = [query] + alternatives[:0]
+    all_queries = [query] + alternatives[:3]
     print(f"[Multi-Query] Generated {len(all_queries)} queries (1 original + {len(alternatives[:3])} alternatives)")
     return all_queries
 

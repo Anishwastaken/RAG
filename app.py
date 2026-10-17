@@ -143,6 +143,10 @@ if "uploaded_file_names" not in st.session_state:
     st.session_state.uploaded_file_names = []
 if "last_uploaded_key" not in st.session_state:
     st.session_state.last_uploaded_key = None
+# Bumped by "Clear Upload" to give the file_uploader a fresh key, which is the
+# only way to empty it programmatically.
+if "uploader_key" not in st.session_state:
+    st.session_state.uploader_key = 0
 
 
 def rewrite_query_if_needed(question):
@@ -278,7 +282,7 @@ with st.sidebar:
         label="Choose file(s)",
         type=["pdf", "docx", "txt", "md"],
         accept_multiple_files=True,
-        key="file_uploader",
+        key=f"file_uploader_{st.session_state.uploader_key}",
         label_visibility="collapsed",
         help="Upload PDF, DOCX, TXT, or MD files. Multiple files are merged into one searchable knowledge base.",
     )
@@ -351,6 +355,7 @@ with st.sidebar:
             st.session_state.uploaded_vectorstore = None
             st.session_state.uploaded_file_names = []
             st.session_state.last_uploaded_key = None
+            st.session_state.uploader_key += 1
             st.rerun()
     else:
         st.markdown(

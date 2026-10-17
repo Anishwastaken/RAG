@@ -18,6 +18,7 @@ from langchain_ollama import OllamaEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from ingest import split_documents
 from utils.data_loader import load_documents
 from utils.prompt import get_qa_prompt
 from features.multi_query import generate_multi_queries, retrieve_for_multiple_queries
@@ -96,7 +97,10 @@ def run_rag(query, search_query=None, chat_history=None, documents=None, vectors
         active_documents = documents
         print(f"[Pipeline] Using {len(active_documents)} caller-supplied documents (uploaded file mode)")
     else:
-        active_documents = load_documents()
+        # Chunk with the same settings as ingest.py so BM25 and the vector
+        # store return identical chunks (whole files would bloat the context
+        # and defeat RRF deduplication).
+        active_documents = split_documents(load_documents())
 
     # ── Step 1: Multi-query generation ──────────────────────────────
     all_queries = generate_multi_queries(llm, retrieval_query)
