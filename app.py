@@ -13,6 +13,7 @@ Usage:
     streamlit run app.py
 """
 
+import datetime
 import re
 import sys
 
@@ -20,7 +21,7 @@ import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
-from config import LIGHT_LLM_MODEL
+from config import LIGHT_LLM_MODEL, MAX_QUESTIONS_PER_SESSION, MAX_QUESTIONS_PER_DAY
 
 from core.pipeline import run_rag
 from utils.prompt import get_query_rewrite_prompt
@@ -125,6 +126,8 @@ st.markdown('<p class="app-subtitle">Query your document set using retrieval-aug
 st.divider()
 
 # ─── Session State ───────────────────────────────────────────────────
+if "questions_asked" not in st.session_state:
+    st.session_state.questions_asked = 0    # counts toward MAX_QUESTIONS_PER_SESSION
 if "messages" not in st.session_state:
     st.session_state.messages = []          # display messages: {"role", "content", "sources"}
 if "chat_history" not in st.session_state:
@@ -190,6 +193,26 @@ def quota_error_message(exc):
     return msg
 
 
+@st.cache_resource
+def daily_usage():
+    """Question counter shared by every visitor of this server process."""
+    return {"date": None, "count": 0}
+
+
+def demo_limit_message():
+    """Return why the demo is closed for this visitor, or None if they can ask."""
+    usage = daily_usage()
+    today = datetime.date.today()
+    if usage["date"] != today:
+        usage["date"], usage["count"] = today, 0
+
+    if MAX_QUESTIONS_PER_DAY and usage["count"] >= MAX_QUESTIONS_PER_DAY:
+        return "The demo has reached its daily question limit. Please come back tomorrow."
+    if MAX_QUESTIONS_PER_SESSION and st.session_state.questions_asked >= MAX_QUESTIONS_PER_SESSION:
+        return f"You've used all {MAX_QUESTIONS_PER_SESSION} questions for this demo session."
+    return None
+
+
 # ─── Display Chat History ───────────────────────────────────────────
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
@@ -201,7 +224,11 @@ for msg in st.session_state.messages:
                     st.markdown(f"- {filename}")
 
 # ─── Chat Input ─────────────────────────────────────────────────────
-if user_input := st.chat_input("Enter your question..."):
+limit_message = demo_limit_message()
+if limit_message:
+    st.info(limit_message)
+
+if user_input := st.chat_input("Enter your question...", disabled=limit_message is not None):
 
     # Display user message
     st.session_state.messages.append({"role": "user", "content": user_input})
@@ -265,6 +292,10 @@ if user_input := st.chat_input("Enter your question..."):
     })
     st.session_state.chat_history.append(HumanMessage(content=user_input))
     st.session_state.chat_history.append(AIMessage(content=answer))
+
+    # Count only answered questions toward the demo limits
+    st.session_state.questions_asked += 1
+    daily_usage()["count"] += 1
 
 # ─── Sidebar ────────────────────────────────────────────────────────
 with st.sidebar:

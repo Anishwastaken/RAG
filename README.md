@@ -115,7 +115,7 @@ pip install -r requirements.txt
 
 3. Add documents in `docs/`
 
-4. Run ingestion (the embedding model, `BAAI/bge-small-en-v1.5`, downloads automatically on first run)
+4. Run ingestion (optional: the app builds the index itself on first start if `db/` is missing; re-run this after changing `docs/`)
 
 ```
 python ingest.py
@@ -170,7 +170,7 @@ Answer: Retrieval query: Who owns Tesla, Inc.?
 
 ## Tech stack
 
-LangChain, ChromaDB, sentence-transformers (BGE embeddings), Gemini, Streamlit, BM25
+LangChain, ChromaDB, FastEmbed (BGE embeddings on ONNX Runtime), Gemini, Streamlit, BM25
 
 ---
 

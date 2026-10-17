@@ -12,13 +12,16 @@ v2 additions:
   of loading from disk, enabling zero-restart document switching.
 """
 
+import os
+from functools import lru_cache
+
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from config import CHROMA_DIR, LLM_MODEL, LIGHT_LLM_MODEL, get_embeddings
-from ingest import split_documents
+from ingest import split_documents, create_vector_store
 from utils.data_loader import load_documents
 from utils.prompt import get_qa_prompt
 from features.multi_query import generate_multi_queries, retrieve_for_multiple_queries
@@ -44,6 +47,24 @@ def _get_vectorstore():
         embedding_function=get_embeddings(),
         collection_metadata={"hnsw:space": "cosine"},
     )
+
+
+@lru_cache(maxsize=1)
+def _get_default_retriever():
+    """
+    Build the hybrid retriever for the default knowledge base once per process,
+    instead of reloading docs and rebuilding BM25 on every question.
+
+    On a fresh deployment there is no db/ yet (it's gitignored), so the vector
+    index is built here on first use. Restart the app after re-running ingest.py.
+    """
+    # Chunk with the same settings as ingest.py so BM25 and the vector store
+    # return identical chunks (needed for RRF deduplication).
+    chunks = split_documents(load_documents())
+    if not os.path.exists(CHROMA_DIR):
+        print(f"[Pipeline] No vector store at '{CHROMA_DIR}' — building it (first start)...")
+        create_vector_store(chunks)
+    return create_hybrid_retriever(_get_vectorstore(), chunks, k=TOP_K_RETRIEVAL)
 
 
 def run_rag(query, search_query=None, chat_history=None, documents=None, vectorstore=None,
@@ -87,20 +108,13 @@ def run_rag(query, search_query=None, chat_history=None, documents=None, vectors
 
     llm = _get_llm()
 
-    # Use the caller-supplied vectorstore (uploaded doc) or fall back to the
-    # persisted default ChromaDB store.
-    active_vectorstore = vectorstore if vectorstore is not None else _get_vectorstore()
-
-    # Use the caller-supplied documents (uploaded doc chunks, for BM25) or fall
-    # back to loading the default knowledge base from disk.
-    if documents is not None:
-        active_documents = documents
-        print(f"[Pipeline] Using {len(active_documents)} caller-supplied documents (uploaded file mode)")
+    # Uploaded files arrive as caller-supplied chunks + vectorstore; otherwise
+    # use the cached retriever for the default knowledge base.
+    if documents is not None and vectorstore is not None:
+        print(f"[Pipeline] Using {len(documents)} caller-supplied documents (uploaded file mode)")
+        hybrid_retriever = create_hybrid_retriever(vectorstore, documents, k=TOP_K_RETRIEVAL)
     else:
-        # Chunk with the same settings as ingest.py so BM25 and the vector
-        # store return identical chunks (whole files would bloat the context
-        # and defeat RRF deduplication).
-        active_documents = split_documents(load_documents())
+        hybrid_retriever = _get_default_retriever()
 
     # ── Step 1: Multi-query generation ──────────────────────────────
     if use_multi_query:
@@ -110,9 +124,6 @@ def run_rag(query, search_query=None, chat_history=None, documents=None, vectors
         print("[Multi-Query] Disabled — using the single query only")
 
     # ── Step 2: Hybrid retrieval for each query ─────────────────────
-    hybrid_retriever = create_hybrid_retriever(
-        active_vectorstore, active_documents, k=TOP_K_RETRIEVAL
-    )
     ranked_lists = retrieve_for_multiple_queries(all_queries, hybrid_retriever)
 
     # ── Step 3: RRF ranking across all lists ────────────────────────

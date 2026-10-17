@@ -22,7 +22,13 @@ LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.5-flash")
 # a lighter model spreads usage across two per-model free-tier quotas.
 LIGHT_LLM_MODEL = "gemini-3.5-flash-lite"
 
-# Runs in-process via sentence-transformers: no server, no API key, no quota.
+# Public-demo guardrails to protect the API quota (0 = unlimited, the default
+# for local use). Set them as secrets / environment variables on the host.
+MAX_QUESTIONS_PER_SESSION = int(os.getenv("MAX_QUESTIONS_PER_SESSION", "0"))
+MAX_QUESTIONS_PER_DAY = int(os.getenv("MAX_QUESTIONS_PER_DAY", "0"))
+
+# Runs in-process via FastEmbed (ONNX Runtime): no server, no API key, no
+# quota, and no PyTorch — which keeps cloud installs small and startup fast.
 # Changing this requires re-running ingest.py (old vectors are incompatible).
 EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
 
@@ -30,9 +36,6 @@ EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
 @lru_cache(maxsize=1)
 def get_embeddings():
     """Load the embedding model once per process (first call downloads it)."""
-    from langchain_huggingface import HuggingFaceEmbeddings
+    from langchain_community.embeddings import FastEmbedEmbeddings
 
-    return HuggingFaceEmbeddings(
-        model_name=EMBEDDING_MODEL,
-        encode_kwargs={"normalize_embeddings": True},
-    )
+    return FastEmbedEmbeddings(model_name=EMBEDDING_MODEL)
