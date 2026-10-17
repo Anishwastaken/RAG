@@ -13,6 +13,8 @@ Usage:
     streamlit run app.py
 """
 
+import sys
+
 import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -23,6 +25,12 @@ from utils.prompt import get_query_rewrite_prompt
 from utils.upload_processor import process_uploaded_files   # NEW
 
 load_dotenv()
+
+# Windows consoles default to cp1252, which can't encode the "→" in pipeline
+# log lines — force UTF-8 so print() never crashes a request.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
 
 MAX_HISTORY = 6  # keep last 6 messages (3 turns) to prevent token overflow
 
