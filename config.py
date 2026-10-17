@@ -3,12 +3,21 @@ Shared configuration — single source of truth for models, chunking and storage
 Imported by ingest.py, core/pipeline.py, utils/upload_processor.py and the entry points.
 """
 
+import os
 from functools import lru_cache
+
+from dotenv import load_dotenv
+
+# Load here (not only in the entry points) so .env overrides below take effect
+# no matter which module imports config first.
+load_dotenv()
 
 CHROMA_DIR = "db/chroma_db"
 CHUNK_SIZE = 800
 CHUNK_OVERLAP = 100
-LLM_MODEL = "gemini-2.5-flash"             # writes the final answer
+# Writes the final answer. Override with LLM_MODEL in .env, e.g. set it to
+# gemini-3.5-flash-lite during development for a much larger free-tier quota.
+LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.5-flash")
 # Query rewriting and multi-query generation are simple tasks; running them on
 # a lighter model spreads usage across two per-model free-tier quotas.
 LIGHT_LLM_MODEL = "gemini-3.5-flash-lite"
