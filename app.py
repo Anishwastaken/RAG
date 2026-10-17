@@ -2,6 +2,13 @@
 Streamlit Web App — ChatGPT-style interface for the RAG system.
 Provides a clean chat UI with answer display, source attribution, and persistent history.
 
+v2 additions:
+  - File upload panel in the sidebar (PDF, DOCX, TXT, MD)
+  - In-memory vectorstore built from uploaded files on the fly
+  - Pipeline automatically routes to uploaded docs when present,
+    falls back to default KB otherwise
+  - Uploading new files replaces the previous upload (no accumulation)
+
 Usage:
     streamlit run app.py
 """
@@ -13,6 +20,7 @@ from dotenv import load_dotenv
 
 from core.pipeline import run_rag
 from utils.prompt import get_query_rewrite_prompt
+from utils.upload_processor import process_uploaded_files   # NEW
 
 load_dotenv()
 
@@ -114,6 +122,20 @@ if "chat_history" not in st.session_state:
 if "llm" not in st.session_state:
     st.session_state.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
 
+# NEW — Upload-related session state keys
+# uploaded_chunks:      list[Document] – chunked text from uploaded file(s)
+# uploaded_vectorstore: Chroma         – in-memory store for uploaded docs
+# uploaded_file_names:  list[str]      – display names shown in sidebar
+# last_uploaded_key:    str            – fingerprint to detect new uploads
+if "uploaded_chunks" not in st.session_state:
+    st.session_state.uploaded_chunks = None
+if "uploaded_vectorstore" not in st.session_state:
+    st.session_state.uploaded_vectorstore = None
+if "uploaded_file_names" not in st.session_state:
+    st.session_state.uploaded_file_names = []
+if "last_uploaded_key" not in st.session_state:
+    st.session_state.last_uploaded_key = None
+
 
 def rewrite_query_if_needed(question):
     """Rewrite a follow-up question into standalone form using chat history.
@@ -160,12 +182,30 @@ if user_input := st.chat_input("Enter your question..."):
             # Query rewriting for follow-ups
             search_query = rewrite_query_if_needed(user_input)
 
-            # Run centralized pipeline (original query for answer, rewritten for retrieval)
-            result = run_rag(
-                query=user_input,
-                search_query=search_query,
-                chat_history=st.session_state.chat_history[-MAX_HISTORY:],
-            )
+            # NEW — Route to uploaded-doc mode or default KB:
+            # If the user has uploaded files, pass the pre-built vectorstore
+            # and chunked documents to run_rag so it uses them exclusively.
+            # If no upload is active, run_rag() receives no extra kwargs and
+            # falls back to the persisted ChromaDB + docs/ directory — exactly
+            # as it worked before this feature was added.
+            if (
+                st.session_state.uploaded_chunks is not None
+                and st.session_state.uploaded_vectorstore is not None
+            ):
+                result = run_rag(
+                    query=user_input,
+                    search_query=search_query,
+                    chat_history=st.session_state.chat_history[-MAX_HISTORY:],
+                    documents=st.session_state.uploaded_chunks,          # NEW
+                    vectorstore=st.session_state.uploaded_vectorstore,   # NEW
+                )
+            else:
+                # Default path — unchanged from original
+                result = run_rag(
+                    query=user_input,
+                    search_query=search_query,
+                    chat_history=st.session_state.chat_history[-MAX_HISTORY:],
+                )
 
             answer = result["answer"]
             sources = result["sources"]
@@ -213,3 +253,99 @@ with st.sidebar:
         st.session_state.messages = []
         st.session_state.chat_history = []
         st.rerun()
+
+    # ── NEW: Document Upload Section ─────────────────────────────────────────
+    st.divider()
+    st.markdown('<p class="sidebar-heading">Upload Document</p>', unsafe_allow_html=True)
+
+    st.markdown(
+        '<p class="sidebar-desc">'
+        'Upload a file to query it directly. Overrides the default knowledge base '
+        'while active. Supports PDF, DOCX, TXT, and MD.'
+        '</p>',
+        unsafe_allow_html=True,
+    )
+
+    uploaded_files = st.file_uploader(
+        label="Choose file(s)",
+        type=["pdf", "docx", "txt", "md"],
+        accept_multiple_files=True,
+        key="file_uploader",
+        label_visibility="collapsed",
+        help="Upload PDF, DOCX, TXT, or MD files. Multiple files are merged into one searchable knowledge base.",
+    )
+
+    # ── Detect whether the uploader contents have changed ────────────────────
+    # We build a simple fingerprint from filenames + sizes.
+    # Comparing this to last_uploaded_key lets us re-process only when something
+    # actually changed — not on every Streamlit rerun.
+    if uploaded_files:
+        current_key = "|".join(
+            f"{f.name}:{f.size}" for f in uploaded_files
+        )
+    else:
+        current_key = None
+
+    if uploaded_files and current_key != st.session_state.last_uploaded_key:
+        # ── New upload detected — process the files ───────────────────────────
+        file_names = [f.name for f in uploaded_files]
+        status_placeholder = st.empty()
+
+        try:
+            status_placeholder.info("⏳ Uploading...")
+
+            status_placeholder.info("📄 Extracting text...")
+            # (extraction happens inside process_uploaded_files)
+
+            status_placeholder.info("🔢 Creating embeddings...")
+            chunks, vectorstore = process_uploaded_files(uploaded_files)
+
+            # Replace previous upload — clear old vectorstore from session state
+            # before storing the new one so Python can GC the old in-memory Chroma.
+            st.session_state.uploaded_chunks = None
+            st.session_state.uploaded_vectorstore = None
+
+            st.session_state.uploaded_chunks = chunks
+            st.session_state.uploaded_vectorstore = vectorstore
+            st.session_state.uploaded_file_names = file_names
+            st.session_state.last_uploaded_key = current_key
+
+            status_placeholder.success(
+                f"✅ Document ready. ({len(chunks)} chunks from {len(file_names)} file(s))"
+            )
+
+        except ValueError as exc:
+            # Unsupported file type or parsing error
+            status_placeholder.error(f"❌ File error: {exc}")
+        except Exception as exc:
+            # Any other unexpected error (embedding failure, etc.)
+            status_placeholder.error(f"❌ Processing failed: {exc}")
+
+    elif not uploaded_files and st.session_state.uploaded_chunks is not None:
+        # ── User cleared the uploader — fall back to default KB ─────────────
+        st.session_state.uploaded_chunks = None
+        st.session_state.uploaded_vectorstore = None
+        st.session_state.uploaded_file_names = []
+        st.session_state.last_uploaded_key = None
+        st.info("ℹ️ Upload cleared. Using default knowledge base.")
+
+    # ── Show active knowledge base indicator ─────────────────────────────────
+    st.markdown("")  # spacer
+    if st.session_state.uploaded_file_names:
+        st.markdown('<p class="sidebar-heading">Active Knowledge Base</p>', unsafe_allow_html=True)
+        for name in st.session_state.uploaded_file_names:
+            st.markdown(
+                f'<div class="sidebar-item">📎 {name}</div>',
+                unsafe_allow_html=True,
+            )
+        if st.button("Clear Upload", use_container_width=True, key="clear_upload_btn"):
+            st.session_state.uploaded_chunks = None
+            st.session_state.uploaded_vectorstore = None
+            st.session_state.uploaded_file_names = []
+            st.session_state.last_uploaded_key = None
+            st.rerun()
+    else:
+        st.markdown(
+            '<div class="sidebar-item"><span class="sidebar-label">KB:</span> Default (docs/)</div>',
+            unsafe_allow_html=True,
+        )

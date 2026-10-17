@@ -5,6 +5,11 @@ Pipeline flow:
   User Query → Multi-Query Generation → Hybrid Retrieval per query → RRF Ranking → LLM → Answer + Sources
 
 All RAG logic lives here. Entry points (query.py, chat.py, app.py) call run_rag().
+
+v2 additions:
+  run_rag() now accepts optional `documents` and `vectorstore` kwargs.
+  When supplied (e.g. from a Streamlit file upload), those are used instead
+  of loading from disk, enabling zero-restart document switching.
 """
 
 from dotenv import load_dotenv
@@ -44,7 +49,7 @@ def _get_vectorstore():
     )
 
 
-def run_rag(query, search_query=None, chat_history=None):
+def run_rag(query, search_query=None, chat_history=None, documents=None, vectorstore=None):
     """
     Run the full RAG pipeline.
 
@@ -58,6 +63,12 @@ def run_rag(query, search_query=None, chat_history=None):
         query: The user's original question (used for answer generation)
         search_query: Optional rewritten query for retrieval (defaults to query)
         chat_history: Optional list of LangChain message objects for context
+        documents: Optional list of pre-loaded LangChain Document objects.
+                   When provided, these are used for BM25 indexing instead of
+                   loading from disk. Pass chunked docs from an uploaded file.
+        vectorstore: Optional pre-built Chroma vectorstore.
+                     When provided, this is used for semantic retrieval instead
+                     of loading the default persisted store.
 
     Returns:
         dict with keys:
@@ -74,17 +85,25 @@ def run_rag(query, search_query=None, chat_history=None):
     print(f"{'='*60}")
 
     llm = _get_llm()
-    vectorstore = _get_vectorstore()
 
-    # Load raw documents (needed for BM25 indexing)
-    documents = load_documents()
+    # Use the caller-supplied vectorstore (uploaded doc) or fall back to the
+    # persisted default ChromaDB store.
+    active_vectorstore = vectorstore if vectorstore is not None else _get_vectorstore()
+
+    # Use the caller-supplied documents (uploaded doc chunks, for BM25) or fall
+    # back to loading the default knowledge base from disk.
+    if documents is not None:
+        active_documents = documents
+        print(f"[Pipeline] Using {len(active_documents)} caller-supplied documents (uploaded file mode)")
+    else:
+        active_documents = load_documents()
 
     # ── Step 1: Multi-query generation ──────────────────────────────
     all_queries = generate_multi_queries(llm, retrieval_query)
 
     # ── Step 2: Hybrid retrieval for each query ─────────────────────
     hybrid_retriever = create_hybrid_retriever(
-        vectorstore, documents, k=TOP_K_RETRIEVAL
+        active_vectorstore, active_documents, k=TOP_K_RETRIEVAL
     )
     ranked_lists = retrieve_for_multiple_queries(all_queries, hybrid_retriever)
 
