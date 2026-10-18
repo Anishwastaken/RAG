@@ -1,5 +1,7 @@
 # RAG System 
 
+**Live demo:** https://anish-rag-demo.streamlit.app/ (ask about Google, Microsoft, Nvidia, SpaceX or Tesla, or upload your own PDF/DOCX. If it's been idle, it takes a minute or two to wake up.)
+
 This is a Retrieval-Augmented Generation (RAG) system I built to actually understand how modern AI systems retrieve and reason over documents instead of just blindly calling APIs.
 
 The goal wasn’t just to “make a chatbot”, but to experiment with better retrieval techniques like multi-query generation, hybrid search, and ranking strategies.
