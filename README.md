@@ -1,6 +1,6 @@
 # RAG System 
 
-**Live demo:** https://anish-rag-demo.streamlit.app/ (ask about Google, Microsoft, Nvidia, SpaceX or Tesla, or upload your own PDF/DOCX. If it's been idle, it takes a minute or two to wake up.)
+**Live demo:** https://anish-rag-demo.streamlit.app/ (upload your own PDF, Word or text file, or click a sample document to try it instantly. If it's been idle, it takes a minute or two to wake up.)
 
 This is a Retrieval-Augmented Generation (RAG) system I built to actually understand how modern AI systems retrieve and reason over documents instead of just blindly calling APIs.
 
@@ -92,7 +92,7 @@ features/
 utils/
   prompt.py
   data_loader.py       # loads docs, strips reference sections
-  upload_processor.py  # chunks + embeds uploaded files
+  upload_processor.py  # chunks + embeds an uploaded or sample document
 
 eval/
   questions.json         # 42 questions with evidence phrases
@@ -115,18 +115,20 @@ pip install -r requirements.txt
 
 2. Add your Gemini API key in `.env`
 
-3. Add documents in `docs/`
-
-4. Run ingestion (optional: the app builds the index itself on first start if `db/` is missing; re-run this after changing `docs/`)
+3. Start the web app, then upload a file or pick a sample document
 
 ```
-python ingest.py
+streamlit run app.py
 ```
 
-5. Ask query
+The app indexes whichever document you choose on the spot, so there's no setup step.
+
+**Command-line mode** (asks questions across all the docs in `docs/` at once):
 
 ```
-python query.py
+python ingest.py   # build the index; re-run after changing docs/
+python query.py    # single questions
+python chat.py     # conversation
 ```
 
 ---

@@ -22,6 +22,11 @@ LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.5-flash")
 # a lighter model spreads usage across two per-model free-tier quotas.
 LIGHT_LLM_MODEL = "gemini-3.5-flash-lite"
 
+# Largest document (all uploaded files combined) the app will index. ~100 pages
+# keeps embedding to well under a minute and memory low on a free server.
+MAX_DOCUMENT_CHARS = 300_000
+CHARS_PER_PAGE = 3_000   # rough figure, only used to phrase the limit in pages
+
 # Public-demo guardrails to protect the API quota (0 = unlimited, the default
 # for local use). Set them as secrets / environment variables on the host.
 MAX_QUESTIONS_PER_SESSION = int(os.getenv("MAX_QUESTIONS_PER_SESSION", "0"))

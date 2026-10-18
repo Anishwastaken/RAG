@@ -1,83 +1,101 @@
 """
-Upload Processor — handles the full pipeline for user-uploaded documents.
+Document Processor — turns a document into something the pipeline can search.
 
-Responsibilities:
-  1. Parse uploaded files (delegates to data_loader.load_uploaded_files)
+Used for both kinds of documents the app works with:
+  - files the user uploads (PDF, DOCX, TXT, MD)
+  - the bundled sample documents in docs/
+
+Steps (same for both):
+  1. Check the document isn't too large to index on a small server
   2. Split into chunks (same splitter config as ingest.py)
-  3. Build an in-memory ChromaDB collection scoped to the upload session
-  4. Return chunks and vectorstore so the pipeline can use them directly
+  3. Embed into an in-memory ChromaDB collection
+  4. Return chunks (for BM25) and vectorstore (for vector search)
 
 This module is intentionally stateless — callers (app.py) manage state via
-st.session_state. All configuration constants mirror ingest.py for consistency.
+st.session_state and st.cache_resource.
 """
 
+import os
 import uuid
+
+from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 
-from config import CHUNK_SIZE, CHUNK_OVERLAP, get_embeddings
-from utils.data_loader import load_uploaded_files
+from config import CHUNK_SIZE, CHUNK_OVERLAP, MAX_DOCUMENT_CHARS, CHARS_PER_PAGE, get_embeddings
+from utils.data_loader import load_uploaded_files, strip_reference_sections
 
-# Unique collection name prefix; a UUID suffix prevents collection collisions
-# when a new file replaces the previous one within the same Chroma process.
-UPLOAD_COLLECTION_PREFIX = "uploaded_docs_"
+SAMPLE_DOCS_PATH = "docs"
+
+# Unique collection name prefix; a UUID suffix gives every document its own
+# collection, so a new document never mixes with a previous one's embeddings.
+COLLECTION_PREFIX = "doc_"
 
 
-def process_uploaded_files(uploaded_files):
+def build_index(raw_documents):
     """
-    Full pipeline: raw UploadedFile(s) → chunked Documents + in-memory Chroma.
-
-    This function is called from app.py whenever the user uploads files.
-    It returns everything the pipeline needs to answer queries from the upload.
-
-    Args:
-        uploaded_files: A single or list of Streamlit UploadedFile objects.
+    Chunk and embed already-loaded Documents into an in-memory vectorstore.
 
     Returns:
         tuple: (chunks, vectorstore)
-            chunks      — list of LangChain Document objects (split text chunks)
-            vectorstore — in-memory Chroma collection populated with embeddings
 
     Raises:
-        ValueError: Propagated from load_uploaded_files on bad file type.
-        RuntimeError: Wraps any unexpected loading/embedding error.
+        ValueError: If the document is too large or contains no text.
     """
-    # ── Step 1: Parse raw bytes into LangChain Documents ─────────────────────
-    print("[UploadProcessor] Parsing uploaded file(s)...")
-    raw_documents = load_uploaded_files(uploaded_files)
-    print(f"[UploadProcessor] Parsed {len(raw_documents)} raw document segment(s)")
+    total_chars = sum(len(doc.page_content) for doc in raw_documents)
+    if total_chars > MAX_DOCUMENT_CHARS:
+        raise ValueError(
+            f"This document is too large for the demo (about "
+            f"{total_chars // CHARS_PER_PAGE:,} pages). The limit is about "
+            f"{MAX_DOCUMENT_CHARS // CHARS_PER_PAGE} pages."
+        )
 
-    # ── Step 2: Split into chunks (same config as ingest.py) ─────────────────
-    print(f"[UploadProcessor] Splitting (chunk={CHUNK_SIZE}, overlap={CHUNK_OVERLAP})...")
+    print(f"[Processor] Splitting (chunk={CHUNK_SIZE}, overlap={CHUNK_OVERLAP})...")
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE,
         chunk_overlap=CHUNK_OVERLAP,
         separators=["\n\n", "\n", ".", " ", ""],
     )
     chunks = splitter.split_documents(raw_documents)
-    print(f"[UploadProcessor] Created {len(chunks)} chunks")
+    print(f"[Processor] Created {len(chunks)} chunks")
 
     if not chunks:
-        raise RuntimeError(
-            "The uploaded file(s) appear to be empty or could not be parsed. "
-            "Please check the file content and try again."
+        raise ValueError(
+            "No text could be extracted. Scanned PDFs (images of pages) aren't "
+            "supported. Please try a file with selectable text."
         )
 
-    # ── Step 3: Build an in-memory Chroma vectorstore ────────────────────────
-    # We use a unique collection name each time so that replacing an uploaded
-    # document always starts with a fresh, clean collection — no stale embeddings
-    # from the previous upload bleed through.
-    collection_name = UPLOAD_COLLECTION_PREFIX + uuid.uuid4().hex[:8]
-    print(f"[UploadProcessor] Building in-memory vectorstore (collection='{collection_name}')...")
-
+    collection_name = COLLECTION_PREFIX + uuid.uuid4().hex[:8]
+    print(f"[Processor] Embedding into in-memory collection '{collection_name}'...")
     vectorstore = Chroma.from_documents(
         documents=chunks,
         embedding=get_embeddings(),
-        # No persist_directory → purely in-memory; disappears when process exits.
-        # This means uploaded docs NEVER pollute the permanent ChromaDB store.
+        # No persist_directory → purely in-memory; nothing is written to disk.
         collection_name=collection_name,
         collection_metadata={"hnsw:space": "cosine"},
     )
-
-    print(f"[UploadProcessor] In-memory vectorstore ready with {len(chunks)} chunks")
+    print(f"[Processor] Ready: {len(chunks)} chunks")
     return chunks, vectorstore
+
+
+def process_uploaded_files(uploaded_files):
+    """Index one or more Streamlit UploadedFile objects. Returns (chunks, vectorstore)."""
+    print("[Processor] Parsing uploaded file(s)...")
+    return build_index(load_uploaded_files(uploaded_files))
+
+
+def list_sample_documents(docs_path=SAMPLE_DOCS_PATH):
+    """Names of the bundled sample documents, e.g. ["Google", "Microsoft", ...]."""
+    return sorted(
+        os.path.splitext(name)[0]
+        for name in os.listdir(docs_path)
+        if name.endswith(".txt")
+    )
+
+
+def process_sample_document(name, docs_path=SAMPLE_DOCS_PATH):
+    """Index one bundled sample document by name. Returns (chunks, vectorstore)."""
+    # utf-8-sig drops the byte-order mark some of the exported files start with
+    with open(os.path.join(docs_path, f"{name}.txt"), encoding="utf-8-sig") as f:
+        text = strip_reference_sections(f.read())
+    return build_index([Document(page_content=text, metadata={"source": f"{name}.txt"})])

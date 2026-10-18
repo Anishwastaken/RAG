@@ -1,0 +1,4 @@
+[server]
+# Megabytes. The app also caps documents at ~100 pages of text; this stops a
+# huge file from being uploaded and parsed before that check can run.
+maxUploadSize = 20
