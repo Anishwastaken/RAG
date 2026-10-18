@@ -34,6 +34,15 @@ def split_documents(documents, chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLA
     return chunks
 
 
+# Written last, so its presence means the store was built completely (a crash
+# or redeploy mid-build leaves a folder without it).
+BUILD_COMPLETE_MARKER = ".build_complete"
+
+
+def is_vector_store_complete(persist_directory=CHROMA_DIR):
+    return os.path.exists(os.path.join(persist_directory, BUILD_COMPLETE_MARKER))
+
+
 def create_vector_store(chunks, persist_directory=CHROMA_DIR):
     """Create and persist ChromaDB vector store from document chunks."""
     # Rebuild from scratch: from_documents appends to an existing store, which
@@ -50,6 +59,7 @@ def create_vector_store(chunks, persist_directory=CHROMA_DIR):
         persist_directory=persist_directory,
         collection_metadata={"hnsw:space": "cosine"},
     )
+    open(os.path.join(persist_directory, BUILD_COMPLETE_MARKER), "w").close()
 
     print(f"[Ingest] Vector store saved to '{persist_directory}'")
     return vectorstore

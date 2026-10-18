@@ -13,7 +13,7 @@ v2 additions:
 """
 
 import os
-from functools import lru_cache
+import threading
 
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
@@ -21,7 +21,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from config import CHROMA_DIR, LLM_MODEL, LIGHT_LLM_MODEL, get_embeddings
-from ingest import split_documents, create_vector_store
+from ingest import split_documents, create_vector_store, is_vector_store_complete
 from utils.data_loader import load_documents
 from utils.prompt import get_qa_prompt
 from features.multi_query import generate_multi_queries, retrieve_for_multiple_queries
@@ -49,22 +49,34 @@ def _get_vectorstore():
     )
 
 
-@lru_cache(maxsize=1)
+_default_retriever = None
+# Streamlit serves each visitor on its own thread, so two first visitors could
+# otherwise both start building — and the second build deletes the first's files.
+_default_retriever_lock = threading.Lock()
+
+
 def get_default_retriever():
     """
     Build the hybrid retriever for the default knowledge base once per process,
     instead of reloading docs and rebuilding BM25 on every question.
 
     On a fresh deployment there is no db/ yet (it's gitignored), so the vector
-    index is built here on first use. Restart the app after re-running ingest.py.
+    index is built here on first use; an incomplete store left by a crash or
+    redeploy is rebuilt too. Restart the app after re-running ingest.py.
     """
-    # Chunk with the same settings as ingest.py so BM25 and the vector store
-    # return identical chunks (needed for RRF deduplication).
-    chunks = split_documents(load_documents())
-    if not os.path.exists(CHROMA_DIR):
-        print(f"[Pipeline] No vector store at '{CHROMA_DIR}' — building it (first start)...")
-        create_vector_store(chunks)
-    return create_hybrid_retriever(_get_vectorstore(), chunks, k=TOP_K_RETRIEVAL)
+    global _default_retriever
+    with _default_retriever_lock:
+        if _default_retriever is None:
+            # Chunk with the same settings as ingest.py so BM25 and the vector
+            # store return identical chunks (needed for RRF deduplication).
+            chunks = split_documents(load_documents())
+            if not is_vector_store_complete():
+                print(f"[Pipeline] No complete vector store at '{CHROMA_DIR}' — building it...")
+                create_vector_store(chunks)
+            _default_retriever = create_hybrid_retriever(
+                _get_vectorstore(), chunks, k=TOP_K_RETRIEVAL
+            )
+        return _default_retriever
 
 
 def run_rag(query, search_query=None, chat_history=None, documents=None, vectorstore=None,
