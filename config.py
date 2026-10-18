@@ -38,4 +38,7 @@ def get_embeddings():
     """Load the embedding model once per process (first call downloads it)."""
     from langchain_community.embeddings import FastEmbedEmbeddings
 
-    return FastEmbedEmbeddings(model_name=EMBEDDING_MODEL)
+    # FastEmbed's default batch_size (256) peaked at 2.7 GB while indexing the
+    # 644 default chunks, which got the app killed on Streamlit Cloud's free
+    # tier. batch_size=8 peaks at ~750 MB and is also ~2x faster.
+    return FastEmbedEmbeddings(model_name=EMBEDDING_MODEL, batch_size=8)
